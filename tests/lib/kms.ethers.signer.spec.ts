@@ -8,7 +8,7 @@ import * as childProcess from 'child_process';
 import {AwsKmsAccount, AccountDetails, KmsEthersSigner} from '../../src';
 import {BN, bnToHex} from 'ethereumjs-util';
 import {TransactionRequest} from '@ethersproject/providers';
-import {exec} from 'child_process';
+import {exec, execSync} from 'child_process';
 
 const knownAlias = 'test-kms-signer-' + Date.now();
 const region = <string>process.env.AWS_DEFAULT_REGION;
@@ -72,7 +72,7 @@ describe('KmsSigner Tests', () => {
     if (childDaemon) {
       if (os.type() === 'Linux') {
         console.log('Stopping hardhat using pkill');
-        exec(`pkill -TERM -P ${childDaemon.pid}`);
+        execSync(`pkill -TERM -P ${childDaemon.pid}`);
       } else {
         console.log('Stopping hardhat using .kill()');
         childDaemon.kill();
