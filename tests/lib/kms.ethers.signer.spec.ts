@@ -32,12 +32,7 @@ describe('KmsSigner Tests', () => {
     return new Promise((resolve, reject) => {
       console.log('Starting hardhat node');
       let resolved = false;
-      childDaemon = childProcess.spawn('npx', [
-          'hardhat',
-          'node',
-          '--port',
-          `${portNumber}`,
-      ])
+      childDaemon = childProcess.spawn('npx', ['hardhat', 'node', '--port', `${portNumber}`]);
       // childDaemon = childProcess.exec(`npx hardhat node --port ${portNumber}`);
 
       childDaemon.on('error', (err) => {
