@@ -1,11 +1,14 @@
 import {BigNumber, ethers} from 'ethers';
 import {randomBytes, randomInt} from 'crypto';
+import * as os from 'os';
+
 import * as ethUtil from 'ethereumjs-util';
 import * as childProcess from 'child_process';
 
 import {AwsKmsAccount, AccountDetails, KmsEthersSigner} from '../../src';
 import {BN, bnToHex} from 'ethereumjs-util';
 import {TransactionRequest} from '@ethersproject/providers';
+import {exec} from 'child_process';
 
 const knownAlias = 'test-kms-signer-' + Date.now();
 const region = <string>process.env.AWS_DEFAULT_REGION;
@@ -33,7 +36,6 @@ describe('KmsSigner Tests', () => {
       console.log('Starting hardhat node');
       let resolved = false;
       childDaemon = childProcess.spawn('npx', ['hardhat', 'node', '--port', `${portNumber}`]);
-      // childDaemon = childProcess.exec(`npx hardhat node --port ${portNumber}`);
 
       childDaemon.on('error', (err) => {
         console.error('Child process failure:', err);
@@ -68,8 +70,13 @@ describe('KmsSigner Tests', () => {
 
   afterAll(async () => {
     if (childDaemon) {
-      console.log('Killing child process');
-      childDaemon.kill();
+      if (os.type() === 'Linux') {
+        console.log('Stopping hardhat using pkill');
+        exec(`pkill -TERM -P ${childDaemon.pid}`);
+      } else {
+        console.log('Stopping hardhat using .kill()');
+        childDaemon.kill();
+      }
     }
   });
 

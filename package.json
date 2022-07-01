@@ -7,7 +7,7 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "build": "tsc",
-    "test": "jest"
+    "test": "jest --detectOpenHandles --coverage"
   },
   "repository": {
     "type": "git",

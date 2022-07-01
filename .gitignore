@@ -2,3 +2,4 @@ node_modules/
 dist/
 src/wallet-test.ts
 cache
+coverage
