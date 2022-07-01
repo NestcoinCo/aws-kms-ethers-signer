@@ -1,6 +1,5 @@
 import {BigNumber, ethers} from 'ethers';
 import {randomBytes, randomInt} from 'crypto';
-import * as os from 'os';
 
 import * as ethUtil from 'ethereumjs-util';
 import * as childProcess from 'child_process';
@@ -8,7 +7,6 @@ import * as childProcess from 'child_process';
 import {AwsKmsAccount, AccountDetails, KmsEthersSigner} from '../../src';
 import {BN, bnToHex} from 'ethereumjs-util';
 import {TransactionRequest} from '@ethersproject/providers';
-import {execSync} from 'child_process';
 
 const knownAlias = 'test-kms-signer-' + Date.now();
 const region = <string>process.env.AWS_DEFAULT_REGION;
@@ -35,7 +33,7 @@ describe('KmsSigner Tests', () => {
     return new Promise((resolve, reject) => {
       console.log('Starting hardhat node');
       let resolved = false;
-      childDaemon = childProcess.spawn('npx', ['hardhat', 'node', '--port', `${portNumber}`]);
+      childDaemon = childProcess.spawn('npx', ['hardhat', 'node', '--port', `${portNumber}`], {detached: true});
 
       childDaemon.on('error', (err) => {
         console.error('Child process failure:', err);
@@ -54,7 +52,7 @@ describe('KmsSigner Tests', () => {
       });
 
       childDaemon.stdout.on('data', (chunk) => {
-        console.log('Hardhat:::', chunk);
+        console.log('Hardhat:::', chunk.toString());
         if (/Private Key/.test(chunk.toString()) && !resolved) {
           resolved = true;
           console.log('Hardhat started early');
@@ -63,20 +61,21 @@ describe('KmsSigner Tests', () => {
       });
 
       childDaemon.stderr.on('data', (chunk) => {
-        console.error('HardhatERR:::', chunk);
+        console.error('HardhatERR:::', chunk.toString());
       });
     });
   });
 
   afterAll(async () => {
     if (childDaemon) {
-      if (os.type() === 'Linux') {
-        console.log('Stopping hardhat using pkill');
-        execSync(`pkill -TERM -P ${childDaemon.pid}`);
-      } else {
-        console.log('Stopping hardhat using .kill()');
-        childDaemon.kill();
-      }
+      // if (os.type() === 'Linux') {
+      //   console.log('Stopping hardhat using pkill', childDaemon.pid);
+      //   execSync(`pkill -9 -s ${childDaemon.pid}`);
+      // } else {
+      //   console.log('Stopping hardhat using .kill()');
+      //   childDaemon.kill();
+      // }
+      process.kill(-childDaemon.pid);
     }
   });
 
