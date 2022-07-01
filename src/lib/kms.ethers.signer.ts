@@ -24,7 +24,7 @@ export interface KmsSignerOptions {
 
 export class KmsEthersSigner extends Signer {
   private address?: string;
-  private verified: boolean;
+  private verified: boolean = false;
   private readonly keyId: string;
   private readonly region?: string;
   private readonly wallet: IWallet;
@@ -34,7 +34,7 @@ export class KmsEthersSigner extends Signer {
     if (provider && !Provider.isProvider(provider)) {
       logger.throwArgumentError('invalid provider', 'provider', provider);
     }
-    defineReadOnly(this, 'provider', provider);
+    defineReadOnly(this, 'provider', provider || null);
 
     this.keyId = kmsOptions.keyId;
     this.address = kmsOptions.address;
@@ -94,5 +94,9 @@ export class KmsEthersSigner extends Signer {
       this.address = address;
       this.verified = true;
     }
+  }
+
+  public isVerified(): boolean {
+    return this.verified;
   }
 }

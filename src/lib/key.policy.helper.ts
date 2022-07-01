@@ -2,11 +2,17 @@ import {STS} from 'aws-sdk';
 
 let accountId;
 let arn;
-export const getKeyPolicy = async () => {
+export const getKeyPolicy = async (isLocal = false) => {
   if (!accountId) {
-    const identityInfo = await new STS().getCallerIdentity().promise();
-    accountId = identityInfo.Account;
-    arn = identityInfo.Arn;
+    if (!isLocal) {
+      const identityInfo = await new STS().getCallerIdentity().promise();
+      accountId = identityInfo.Account;
+      arn = identityInfo.Arn;
+    } else {
+      // TODO allow customization of this in the future.
+      accountId = '111122223333';
+      arn = `arn:aws:iam::${accountId}:user/local-user`;
+    }
   }
 
   const policyDocument = {

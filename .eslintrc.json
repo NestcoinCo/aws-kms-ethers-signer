@@ -17,6 +17,10 @@
   ],
   "rules": {
     "require-jsdoc": "off",
+    "no-unused-vars": "error",
+    "no-unused-expressions": "warn",
+    "guard-for-in": "off",
+    "no-var": "error",
     "new-cap": "off"
   }
 }

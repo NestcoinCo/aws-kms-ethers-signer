@@ -10,10 +10,10 @@ import {SignatureResponse} from './signature.response';
 import {IWallet} from './wallet.interface';
 
 const SECP256_K1_N = new BN('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141', 16); // max value on the curve
+const LOCAL_KMS_ENDPOINT = <string>process.env.LOCAL_KMS_ENDPOINT;
 
-interface KeyStoreData {
-  keyId: string;
-  region: string;
+if (LOCAL_KMS_ENDPOINT && LOCAL_KMS_ENDPOINT.includes('.amazonaws.com')) {
+  throw new Error('LOCAL_KMS_ENDPOINT cannot be a valid AWS URL');
 }
 
 // noinspection JSVoidFunctionReturnValueUsed
@@ -43,11 +43,6 @@ function getEthereumAddress(publicKey: Buffer, prefix = '0x'): string {
   const address = keccak256(pubKeyBuffer); // keccak256 hash of publicKey
   const buf2 = Buffer.from(address);
   return prefix + buf2.slice(-20).toString('hex'); // take last 20 bytes as ethereum adress
-}
-
-function decodeStoreData(storeData: Buffer): KeyStoreData {
-  const rawJson = Buffer.from(storeData).toString('utf8');
-  return <KeyStoreData>JSON.parse(rawJson);
 }
 
 function findEthereumSig(signature: Buffer) {
@@ -86,12 +81,6 @@ function recoverPubKeyFromSig(msg: Buffer, r: BN, s: BN, v: number) {
   const pubKey = ecrecover(msg, v, r.toBuffer(), s.toBuffer());
   const addrBuf = pubToAddress(pubKey);
   return bufferToHex(addrBuf);
-}
-
-function verifyDerivationPath(path) {
-  if (path && !path.endsWith('/0/0')) {
-    throw new Error('Derivation path is not at 0th. Attemot to use hierarchical address here.');
-  }
 }
 
 class EthereumWallet implements IWallet {
@@ -138,7 +127,6 @@ class EthereumWallet implements IWallet {
   signDigest(msgHash: Buffer, chainId?: number): Promise<SignatureResponse> {
     return this.sign(msgHash, chainId);
   }
-
 }
 
 export interface AccountOptions {
@@ -158,17 +146,40 @@ const getRegionFromArn = (arn) => arn.split(':')[3];
 
 export class AwsKmsAccount {
   static createKmsClient(region): KMS {
-    return new KMS({region});
+    const options: KMS.Types.ClientConfiguration = {region};
+    if (LOCAL_KMS_ENDPOINT) {
+      options.endpoint = LOCAL_KMS_ENDPOINT;
+    }
+    return new KMS(options);
   }
 
   public static async createNewAccount(options: AccountOptions): Promise<AccountDetails> {
-    const policy = await getKeyPolicy();
+    const policy = await getKeyPolicy(!!LOCAL_KMS_ENDPOINT);
     const tags: KMS.TagList = [{TagKey: 'key_creator', TagValue: 'aws-kms-signers'}];
 
     const kmsClient = AwsKmsAccount.createKmsClient(options.region);
     if (options.tags) {
       for (const tagName in options.tags) {
         tags.push({TagKey: tagName, TagValue: options.tags[tagName]});
+      }
+    }
+
+    let aliasName: string;
+    if (options.alias) {
+      aliasName = options.alias.startsWith('alias/') ? options.alias : `alias/${options.alias}`;
+      try {
+        const existingKey = await kmsClient
+          .describeKey({
+            KeyId: aliasName,
+          })
+          .promise();
+        if (existingKey.KeyMetadata.KeyId) {
+          throw new Error(`A key with ID ${existingKey.KeyMetadata.KeyId} already exists with given alias`);
+        }
+      } catch (err: any) {
+        if (err.code !== 'NotFoundException') {
+          throw err;
+        }
       }
     }
 
@@ -186,9 +197,7 @@ export class AwsKmsAccount {
 
     console.log('Created key: ', keyCreation.KeyMetadata.KeyId);
 
-    let aliasName: string;
-    if (options.alias) {
-      aliasName = options.alias.startsWith('alias/') ? options.alias : `alias/${options.alias}`;
+    if (aliasName) {
       await kmsClient
         .createAlias({
           AliasName: aliasName,
