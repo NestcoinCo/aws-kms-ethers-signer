@@ -4,6 +4,9 @@
   "description": "Node.JS package for using KMS keys as Ethereum Accounts with ability to sign transactions and messages.",
   "main": "dist/index.js",
   "scripts": {
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -27,10 +30,26 @@
   "homepage": "https://github.com/NestcoinCo/aws-kms-ethers-signer#readme",
   "devDependencies": {
     "@types/node": "^18.0.0",
+    "@typescript-eslint/eslint-plugin": "5.21.0",
+    "@typescript-eslint/parser": "5.21.0",
+    "eslint": "8.14.0",
+    "eslint-config-google": "0.14.0",
+    "eslint-config-prettier": "8.5.0",
+    "eslint-config-standard": "17.0.0",
+    "eslint-plugin-import": "2.26.0",
+    "eslint-plugin-n": "15.2.0",
+    "eslint-plugin-prettier": "4.0.0",
+    "eslint-plugin-promise": "6.0.0",
+    "prettier": "2.6.2",
     "ts-node": "^10.8.1",
     "typescript": "^4.7.4"
   },
   "peerDependencies": {
     "ethers": "^5.0.0"
+  },
+  "dependencies": {
+    "asn1.js": "^5.4.1",
+    "aws-sdk": "^2.1166.0",
+    "ethereumjs-util": "^7.1.5"
   }
 }
