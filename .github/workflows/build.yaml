@@ -1,0 +1,43 @@
+
+name: Build and Test
+on: push
+
+jobs:
+  testLibrary:
+    name: Build and Test Library
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+          cache: 'npm'
+
+      - name: NPM Install
+        run: npm install
+
+      - name: NPM Lint
+        run: npm run lint
+
+      - name: Start Local KMS
+        run: |
+          docker run -p 9000:8080 --rm --name kms-local -d nsmithuk/local-kms
+          sleep 2
+          docker logs kms-local 2>&1 | grep "Local KMS started" || exit 12
+      - name: Test Project
+        env:
+          LOCAL_KMS_ENDPOINT: 'http://localhost:9000'
+        run: |
+          npm test
+      - if: always()
+        name: Stop Local KMS
+        run: |
+          docker stop kms-local || echo 'Not running'
+
+      - name: NPM Build
+        run: npm run build
