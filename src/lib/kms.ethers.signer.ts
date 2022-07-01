@@ -81,7 +81,7 @@ export class KmsEthersSigner extends Signer {
     }
 
     const txHash = keccak256(serialize(<UnsignedTransaction>tx));
-    const signature = await this.wallet.signDigest(toBuffer(txHash), tx.chainId);
+    const signature = await this.wallet.signDigest(toBuffer(txHash));
     return serialize(<UnsignedTransaction>tx, signature.sig);
   }
 
