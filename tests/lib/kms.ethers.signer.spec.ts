@@ -218,19 +218,19 @@ describe('KmsSigner Tests', () => {
       const oldSecondaryBalance = await signerSecondaryAccount.getBalance('latest');
       expect(oldSecondaryBalance.eq(0)).toStrictEqual(true);
 
-      const nonce = await signerPrimaryAccount.getTransactionCount(0);
+      const nonce = await signerPrimaryAccount.getTransactionCount();
       const gasPrice = await signerPrimaryAccount.getGasPrice();
       const chain = await provider.detectNetwork();
 
       console.log('Chain information:', chain);
 
-      const amountToTransfer = new BN('1000000000000000000');
+      const amountToTransfer = BigNumber.from('1000000000000000000');
       const txnRequest = <TransactionRequest>{
         nonce,
         gasLimit: 21000,
         gasPrice,
         chainId: chain.chainId, //
-        value: bnToHex(amountToTransfer),
+        value: amountToTransfer,
         to: secondaryAcctDetails.address,
       };
 
@@ -242,9 +242,7 @@ describe('KmsSigner Tests', () => {
 
       const newSecondaryBalance = await signerSecondaryAccount.getBalance('latest');
 
-      const amountTransferredBigN = BigNumber.from(bnToHex(amountToTransfer));
-
-      expect(newSecondaryBalance.eq(amountTransferredBigN)).toStrictEqual(true);
+      expect(newSecondaryBalance.eq(amountToTransfer)).toStrictEqual(true);
     });
   });
 });
