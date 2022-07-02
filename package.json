@@ -1,5 +1,5 @@
 {
-  "name": "@nestcoinoss/aws-kms-ethers-signer",
+  "name": "@nestcoinco/aws-kms-ethers-signer",
   "version": "1.0.0",
   "description": "Node.JS package for using KMS keys as Ethereum Accounts with ability to sign transactions and messages.",
   "main": "dist/index.js",

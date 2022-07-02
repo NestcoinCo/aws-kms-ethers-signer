@@ -24,6 +24,19 @@ The package enables you to do the following:
    not provide a way to configure your AWS credentials, so you need to use environment variables, instance profiles or
    AWS CLI credentials file.
 
+## Installation
+### Installing with GIT URL
+```shell
+npm install https://github.com/NestcoinCo/aws-kms-ethers-signer.git#main
+```
+### Install via Github Package Repo
+```shell
+# Configure the repository
+npm config set @nestcoinco:registry https://npm.pkg.github.com/nestcoinco
+
+npm install @nestcoinco/aws-kms-ethers-signer
+```
+
 ## Usage
 
 ### Account Creation
@@ -32,7 +45,7 @@ When you create a new account, a new KMS key with specified alias (optional) is 
 then the package attempts to get the ARN of the current user in order to grant them permission to use the created key.
 
 ```typescript
-import {AwsKmsAccount} from '@nestcoinoss/aws-kms-ethers-signer';
+import {AwsKmsAccount} from '@nestcoinco/aws-kms-ethers-signer';
 
 const accountDetails = await AwsKmsAccount.createNewAccount({
     alias: 'alias/my-awesome-key', // optional string;
@@ -58,7 +71,7 @@ To get the address associated with a KMS key, you can either use the Ether signe
 
 1. Using Wallet Interface
    ```typescript
-   import {AwsKmsAccount, IWallet} from '@nestcoinoss/aws-kms-ethers-signer';
+   import {AwsKmsAccount, IWallet} from '@nestcoinco/aws-kms-ethers-signer';
    
    const keyId = 'alias/my-awesome-key'; // can be replaced with keyId
    const region = 'eu-west-2';
@@ -70,7 +83,7 @@ To get the address associated with a KMS key, you can either use the Ether signe
 
 2. Using Ethers Signer
    ```typescript
-   import {KmsEthersSigner} from '@nestcoinoss/aws-kms-ethers-signer';
+   import {KmsEthersSigner} from '@nestcoinco/aws-kms-ethers-signer';
    
    const keyId = 'alias/my-awesome-key'; // can be replaced with keyId
    const region = 'eu-west-2'; 
@@ -93,7 +106,7 @@ To sign personal messages, you need to use the ethers signer for convenience.
 > You can also use the IWallet.signDigest(hash, chainId) interface method directly.
 
 ```typescript
-   import {KmsEthersSigner} from '@nestcoinoss/aws-kms-ethers-signer';
+   import {KmsEthersSigner} from '@nestcoinco/aws-kms-ethers-signer';
    
    const keyId = 'alias/my-awesome-key'; // can be replaced with keyId
    const region = 'eu-west-2'; 
@@ -115,7 +128,7 @@ To sign personal messages, you need to use the ethers signer for convenience.
 Signing and sending transactions is straightforward, ensue to use the right EIP-155  chain ID.
 
 ```typescript
-import {KmsEthersSigner} from '@nestcoinoss/aws-kms-ethers-signer';
+import {KmsEthersSigner} from '@nestcoinco/aws-kms-ethers-signer';
 import {ethers, BigNumber} from 'ethers';
 
 const provider = new ethers.providers.JsonRpcProvider(`https://your-rpc-url`);
