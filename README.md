@@ -32,7 +32,7 @@ npm install https://github.com/NestcoinCo/aws-kms-ethers-signer.git#main
 ### Install via Github Package Repo
 ```shell
 # Configure the repository
-npm config set @nestcoinco:registry https://npm.pkg.github.com/nestcoinco
+npm config set @nestcoinco:registry https://npm.pkg.github.com
 
 npm install @nestcoinco/aws-kms-ethers-signer
 ```
