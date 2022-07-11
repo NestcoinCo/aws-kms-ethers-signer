@@ -184,6 +184,10 @@ docker run -p 9000:8080 --rm --name kms-local -d nsmithuk/local-kms
 ## Set environment variable
 export LOCAL_KMS_ENDPOINT='http://localhost:9000'
 
+# Prevent Instance Metadata Lookup
+export AWS_ACCESS_KEY_ID=Test
+export AWS_SECRET_ACCESS_KEY=Test
+
 ## Test this package
 npm run test 
 
