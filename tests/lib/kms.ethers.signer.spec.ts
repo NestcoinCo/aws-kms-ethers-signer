@@ -1,11 +1,11 @@
-import { JsonRpcProvider, Networkish, toBeHex, TransactionRequest } from 'ethers';
+import {JsonRpcProvider, toBeHex, TransactionRequest} from 'ethers';
 import {randomBytes, randomInt} from 'crypto';
 
 import * as ethUtil from 'ethereumjs-util';
 import {BN, bnToHex} from 'ethereumjs-util';
 import * as childProcess from 'child_process';
 
-import {AccountDetails, AwsKmsAccount, KmsEthersSigner, StaticJsonRpcProvider} from '../../src';
+import {AccountDetails, AwsKmsAccount, KmsEthersSigner} from '../../src';
 
 const knownAlias = 'test-kms-signer-' + Date.now();
 const region = <string>process.env.AWS_DEFAULT_REGION;
