@@ -32,7 +32,7 @@ npm install https://github.com/NestcoinCo/aws-kms-ethers-signer.git#main
 ### Install via Github Package Repo
 ```shell
 # Configure the repository
-npm config set @nestcoinco:registry https://npm.pkg.github.com/nestcoinco
+npm config set @nestcoinco:registry https://npm.pkg.github.com
 
 npm install @nestcoinco/aws-kms-ethers-signer
 ```
@@ -183,6 +183,10 @@ docker run -p 9000:8080 --rm --name kms-local -d nsmithuk/local-kms
 
 ## Set environment variable
 export LOCAL_KMS_ENDPOINT='http://localhost:9000'
+
+# Prevent Instance Metadata Lookup
+export AWS_ACCESS_KEY_ID=Test
+export AWS_SECRET_ACCESS_KEY=Test
 
 ## Test this package
 npm run test 
