@@ -2,7 +2,16 @@
 /**
  * AWS KMS Signing Adapted from https://github.com/lucashenning/aws-kms-ethereum-signing
  */
-import {KMS} from 'aws-sdk';
+import {
+  CreateAliasCommand,
+  CreateKeyCommand,
+  DescribeKeyCommand, DescribeKeyCommandOutput,
+  GetPublicKeyCommand,
+  KMS,
+  KMSClientConfig,
+  SignCommand,
+  Tag,
+} from '@aws-sdk/client-kms';
 import * as asn1 from 'asn1.js';
 import {BN, bnToHex, bufferToHex, ecrecover, intToHex, keccak256, pubToAddress, toRpcSig} from 'ethereumjs-util';
 import {getKeyPolicy} from './key.policy.helper';
@@ -38,11 +47,11 @@ function getEthereumAddress(publicKey: Buffer, prefix = '0x'): string {
 
   // The public key starts with a 0x04 prefix that needs to be removed
   // more info: https://www.oreilly.com/library/view/mastering-ethereum/9781491971932/ch04.html
-  pubKeyBuffer = pubKeyBuffer.slice(1, pubKeyBuffer.length);
+  pubKeyBuffer = pubKeyBuffer.subarray(1, pubKeyBuffer.length);
 
   const address = keccak256(pubKeyBuffer); // keccak256 hash of publicKey
   const buf2 = Buffer.from(address);
-  return prefix + buf2.slice(-20).toString('hex'); // take last 20 bytes as ethereum adress
+  return prefix + buf2.subarray(-20).toString('hex'); // take last 20 bytes as ethereum adress
 }
 
 function findEthereumSig(signature: Buffer) {
@@ -93,8 +102,8 @@ class EthereumWallet implements IWallet {
   }
 
   async getAddress(): Promise<string> {
-    const publicKeyData = await this.kmsClient.getPublicKey({KeyId: this.keyId}).promise();
-    return getEthereumAddress(publicKeyData.PublicKey as Buffer);
+    const publicKeyData = await this.kmsClient.send(new GetPublicKeyCommand({KeyId: this.keyId}));
+    return getEthereumAddress(Buffer.from(publicKeyData.PublicKey));
   }
 
   private async sign(dataHash: Buffer, chainId?: number): Promise<SignatureResponse> {
@@ -103,17 +112,17 @@ class EthereumWallet implements IWallet {
       throw new Error('The provided number is greater than MAX_SAFE_INTEGER (please use an alternative input type)');
     }
 
-    const signing = await this.kmsClient
-      .sign({
+    const signing = await this.kmsClient.send(
+      new SignCommand({
         Message: dataHash,
         KeyId: this.keyId,
         SigningAlgorithm: 'ECDSA_SHA_256',
         MessageType: 'DIGEST',
-      })
-      .promise();
+      }),
+    );
 
     const address = await this.getAddress();
-    const {r, s} = findEthereumSig(signing.Signature as Buffer);
+    const {r, s} = findEthereumSig(Buffer.from(signing.Signature));
     const recovery = calculateRecovery(dataHash, r, s, address);
     const v = chainId ? recovery + 8 + chainId * 2 : recovery;
     return {
@@ -142,20 +151,22 @@ export interface AccountDetails {
   alias: string;
 }
 
-const getRegionFromArn = (arn) => arn.split(':')[3];
+const getRegionFromArn = (arn: string) => arn.split(':')[3];
 
 export class AwsKmsAccount {
-  static createKmsClient(region): KMS {
-    const options: KMS.Types.ClientConfiguration = {region};
+  static createKmsClient(region: string): KMS {
+    const options: KMSClientConfig = {region};
     if (LOCAL_KMS_ENDPOINT) {
       options.endpoint = LOCAL_KMS_ENDPOINT;
     }
-    return new KMS(options);
+    return new KMS({
+      ...options,
+    });
   }
 
   public static async createNewAccount(options: AccountOptions): Promise<AccountDetails> {
     const policy = await getKeyPolicy(!!LOCAL_KMS_ENDPOINT);
-    const tags: KMS.TagList = [{TagKey: 'key_creator', TagValue: 'aws-kms-signers'}];
+    const tags: Tag[] = [{TagKey: 'key_creator', TagValue: 'aws-kms-signers'}];
 
     const kmsClient = AwsKmsAccount.createKmsClient(options.region);
     if (options.tags) {
@@ -167,24 +178,22 @@ export class AwsKmsAccount {
     let aliasName: string;
     if (options.alias) {
       aliasName = options.alias.startsWith('alias/') ? options.alias : `alias/${options.alias}`;
+      let existingKey: DescribeKeyCommandOutput = undefined;
       try {
-        const existingKey = await kmsClient
-          .describeKey({
-            KeyId: aliasName,
-          })
-          .promise();
-        if (existingKey.KeyMetadata.KeyId) {
-          throw new Error(`A key with ID ${existingKey.KeyMetadata.KeyId} already exists with given alias`);
-        }
+         existingKey = await kmsClient.send(new DescribeKeyCommand({KeyId: aliasName}));
       } catch (err: any) {
-        if (err.code !== 'NotFoundException') {
+        if (err.name !== 'NotFoundException') {
           throw err;
         }
+      }
+
+      if (existingKey && existingKey.KeyMetadata.KeyId) {
+        throw new Error(`A key with ID ${existingKey.KeyMetadata.KeyId} already exists with given alias`);
       }
     }
 
     const keyCreation = await kmsClient
-      .createKey({
+      .send(new CreateKeyCommand({
         KeySpec: 'ECC_SECG_P256K1',
         KeyUsage: 'SIGN_VERIFY',
         // TODO allow HSM
@@ -192,18 +201,15 @@ export class AwsKmsAccount {
         Description: 'Ethereum Account Address',
         Policy: policy,
         Tags: tags,
-      })
-      .promise();
+      }));
 
     console.log('Created key: ', keyCreation.KeyMetadata.KeyId);
 
     if (aliasName) {
-      await kmsClient
-        .createAlias({
-          AliasName: aliasName,
-          TargetKeyId: keyCreation.KeyMetadata.KeyId,
-        })
-        .promise();
+      await kmsClient.send(new CreateAliasCommand({
+        AliasName: aliasName,
+        TargetKeyId: keyCreation.KeyMetadata.KeyId,
+      }));
     }
 
     const address = await new EthereumWallet(keyCreation.KeyMetadata.KeyId, kmsClient).getAddress();
