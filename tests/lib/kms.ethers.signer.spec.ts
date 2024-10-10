@@ -1,12 +1,11 @@
-import {BigNumber, ethers} from 'ethers';
+import { JsonRpcProvider, Networkish, toBeHex, TransactionRequest } from 'ethers';
 import {randomBytes, randomInt} from 'crypto';
 
 import * as ethUtil from 'ethereumjs-util';
+import {BN, bnToHex} from 'ethereumjs-util';
 import * as childProcess from 'child_process';
 
-import {AwsKmsAccount, AccountDetails, KmsEthersSigner} from '../../src';
-import {BN, bnToHex} from 'ethereumjs-util';
-import {TransactionRequest} from '@ethersproject/providers';
+import {AccountDetails, AwsKmsAccount, KmsEthersSigner, StaticJsonRpcProvider} from '../../src';
 
 const knownAlias = 'test-kms-signer-' + Date.now();
 const region = <string>process.env.AWS_DEFAULT_REGION;
@@ -21,7 +20,7 @@ const recoverAddressFromPersonalMsg = (message: string, signature) => {
 let childDaemon: childProcess.ChildProcess;
 
 const portNumber = 40000 + randomInt(20000);
-const provider = new ethers.providers.JsonRpcProvider(`http://localhost:${portNumber}`);
+const provider = new JsonRpcProvider(`http://localhost:${portNumber}`);
 const HARDHAT_START_DELAY = 5000;
 // Create buffer
 jest.setTimeout(HARDHAT_START_DELAY + 5000);
@@ -164,9 +163,7 @@ describe('KmsSigner Tests', () => {
         keyId: accountDetails.alias,
       });
 
-      const connectedSigner = signer.connect(provider);
-
-      const nonce = await connectedSigner.getTransactionCount('latest');
+      const nonce = await provider.getTransactionCount(await signer.getAddress());
       expect(nonce).toStrictEqual(0);
     });
   });
@@ -185,9 +182,9 @@ describe('KmsSigner Tests', () => {
         provider,
       );
 
-      const balance = await signer.getBalance();
+      const balance = await provider.getBalance(signer.getAddress());
       console.log('Balance =', balance);
-      expect(balance.toHexString()).toEqual(newBalance);
+      expect(toBeHex(balance)).toEqual(newBalance);
     });
 
     it('should send funds to new address', async () => {
@@ -212,19 +209,19 @@ describe('KmsSigner Tests', () => {
         provider,
       );
 
-      const oldPrimaryBalance = await signerPrimaryAccount.getBalance('latest');
-      expect(oldPrimaryBalance.gt(0)).toStrictEqual(true);
+      const oldPrimaryBalance = await provider.getBalance(signerPrimaryAccount.getAddress(), 'latest');
+      expect(oldPrimaryBalance > BigInt(0)).toStrictEqual(true);
 
-      const oldSecondaryBalance = await signerSecondaryAccount.getBalance('latest');
-      expect(oldSecondaryBalance.eq(0)).toStrictEqual(true);
+      const oldSecondaryBalance = await provider.getBalance(signerSecondaryAccount, 'latest');
+      expect(oldSecondaryBalance).toStrictEqual(BigInt(0));
 
-      const nonce = await signerPrimaryAccount.getTransactionCount();
-      const gasPrice = await signerPrimaryAccount.getGasPrice();
-      const chain = await provider.detectNetwork();
+      const nonce = await provider.getTransactionCount(signerPrimaryAccount);
+      const {gasPrice} = await provider.getFeeData();
+      const chain = await provider.getNetwork();
 
       console.log('Chain information:', chain);
 
-      const amountToTransfer = BigNumber.from('1000000000000000000');
+      const amountToTransfer = BigInt('1000000000000000000');
       const txnRequest = <TransactionRequest>{
         nonce,
         gasLimit: 21000,
@@ -236,13 +233,14 @@ describe('KmsSigner Tests', () => {
 
       const sendTxResult = await signerPrimaryAccount.sendTransaction(txnRequest);
       console.log('Sent transaction:::', JSON.stringify(sendTxResult));
+      await sendTxResult.wait(1);
 
       const newPrimaryBalance = await signerPrimaryAccount.getBalance('latest');
-      expect(newPrimaryBalance.lt(oldPrimaryBalance)).toStrictEqual(true);
+      expect(newPrimaryBalance).toBeLessThan(oldPrimaryBalance);
 
       const newSecondaryBalance = await signerSecondaryAccount.getBalance('latest');
 
-      expect(newSecondaryBalance.eq(amountToTransfer)).toStrictEqual(true);
+      expect(newSecondaryBalance).toStrictEqual(amountToTransfer);
     });
   });
 });

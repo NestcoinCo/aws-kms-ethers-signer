@@ -1,6 +1,6 @@
 {
   "name": "@nestcoinco/aws-kms-ethers-signer",
-  "version": "1.0.2",
+  "version": "2.0.0",
   "description": "Node.JS package for using KMS keys as Ethereum Accounts with ability to sign transactions and messages.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -37,7 +37,7 @@
   },
   "homepage": "https://github.com/NestcoinCo/aws-kms-ethers-signer#readme",
   "devDependencies": {
-    "@nomiclabs/hardhat-ethers": "^2.0.6",
+    "@nomicfoundation/hardhat-ethers": "^3.0.8",
     "@types/jest": "^28.1.4",
     "@types/node": "^18.0.0",
     "@typescript-eslint/eslint-plugin": "^5.30.0",
@@ -57,7 +57,7 @@
     "typescript": "^4.7.4"
   },
   "peerDependencies": {
-    "ethers": "^5.6.2"
+    "ethers": "^6.13.3"
   },
   "dependencies": {
     "asn1.js": "^5.4.1",
