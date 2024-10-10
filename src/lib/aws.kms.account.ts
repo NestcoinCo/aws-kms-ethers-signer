@@ -5,7 +5,8 @@
 import {
   CreateAliasCommand,
   CreateKeyCommand,
-  DescribeKeyCommand, DescribeKeyCommandOutput,
+  DescribeKeyCommand,
+  DescribeKeyCommandOutput,
   GetPublicKeyCommand,
   KMS,
   KMSClientConfig,
@@ -180,7 +181,7 @@ export class AwsKmsAccount {
       aliasName = options.alias.startsWith('alias/') ? options.alias : `alias/${options.alias}`;
       let existingKey: DescribeKeyCommandOutput = undefined;
       try {
-         existingKey = await kmsClient.send(new DescribeKeyCommand({KeyId: aliasName}));
+        existingKey = await kmsClient.send(new DescribeKeyCommand({KeyId: aliasName}));
       } catch (err: any) {
         if (err.name !== 'NotFoundException') {
           throw err;
@@ -192,8 +193,8 @@ export class AwsKmsAccount {
       }
     }
 
-    const keyCreation = await kmsClient
-      .send(new CreateKeyCommand({
+    const keyCreation = await kmsClient.send(
+      new CreateKeyCommand({
         KeySpec: 'ECC_SECG_P256K1',
         KeyUsage: 'SIGN_VERIFY',
         // TODO allow HSM
@@ -201,15 +202,18 @@ export class AwsKmsAccount {
         Description: 'Ethereum Account Address',
         Policy: policy,
         Tags: tags,
-      }));
+      }),
+    );
 
     console.log('Created key: ', keyCreation.KeyMetadata.KeyId);
 
     if (aliasName) {
-      await kmsClient.send(new CreateAliasCommand({
-        AliasName: aliasName,
-        TargetKeyId: keyCreation.KeyMetadata.KeyId,
-      }));
+      await kmsClient.send(
+        new CreateAliasCommand({
+          AliasName: aliasName,
+          TargetKeyId: keyCreation.KeyMetadata.KeyId,
+        }),
+      );
     }
 
     const address = await new EthereumWallet(keyCreation.KeyMetadata.KeyId, kmsClient).getAddress();
