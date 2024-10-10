@@ -6,7 +6,7 @@
 process.env.LOCAL_KMS_ENDPOINT = process.env.LOCAL_KMS_ENDPOINT || 'http://localhost:9000';
 
 // Just ensuring AWS credentials are never used
-process.env.AWS_PROFILE = '___jest_environment___';
+process.env.AWS_PROFILE = '';
 process.env.AWS_ACCESS_KEY_ID = 'AKIAIOSFODNN7EXAMPLE';
 process.env.AWS_SECRET_ACCESS_KEY = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY';
 process.env.AWS_DEFAULT_REGION = 'eu-west-2';

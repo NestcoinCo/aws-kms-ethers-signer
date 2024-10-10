@@ -1,11 +1,11 @@
-import {STS} from 'aws-sdk';
+import {STSClient, GetCallerIdentityCommand} from '@aws-sdk/client-sts';
 
 let accountId;
 let arn;
 export const getKeyPolicy = async (isLocal = false) => {
   if (!accountId) {
     if (!isLocal) {
-      const identityInfo = await new STS().getCallerIdentity().promise();
+      const identityInfo = await new STSClient().send(new GetCallerIdentityCommand());
       accountId = identityInfo.Account;
       arn = identityInfo.Arn;
     } else {
